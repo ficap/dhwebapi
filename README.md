@@ -3,7 +3,7 @@ This library helps you to easily interact with hub.docker.com **web** interface.
 It's really up to you how you use it whether you use cli or make your own app based on this library. 
 This library is only Python3 compatible. 
 ## Dependencies
-* [python](https://www.python.org/)
+* [python3](https://www.python.org/)
 * [requests](https://github.com/requests/requests)
 
 
@@ -15,5 +15,5 @@ This library is only Python3 compatible.
     * or by using cli interface
         * dhwebapi 
         
-2. great for use inside jenkins tasks
+2. **great for use inside jenkins tasks**
    
