@@ -96,62 +96,148 @@ class DockerHubException(Exception):
 
 
 def _main():
-    requires_login = ["update-repo-full-description", "update-repo-description"]
-    requires_input = ["update-repo-full-description", "update-repo-description"]
-
     from argparse import ArgumentParser, FileType
-    arg_parser = ArgumentParser(prog="dhwebapi")
-    arg_parser.add_argument("-u", "--username",
-                            help="Use this username for identification during communication with hub.docker.com",
-                            required=False)
-    arg_parser.add_argument("-p", "--password",
-                            help="Use this password for identification during communication with hub.docker.com \n "
-                                 "THIS IS NOT RECOMMENDED BECAUSE PASSWORD MAY BE SHOWN IN COMMANDS LOG!",
-                            required=False)
-    arg_parser.add_argument("-f", "--file",
-                            help="Use this file as an input for pushing operations",
-                            required=False, type=FileType())
-    arg_parser.add_argument("-t", "--token",
-                            help="Use this token as identification during communication with hub.docker.com",
-                            required=False)
-    arg_parser.add_argument("--tokenfile",
-                            help="Use token in this file for authentication during communication.",
-                            required=False, type=FileType())
-    arg_parser.add_argument("command", choices=["update-repo-full-description", "update-repo-description"])
-    arg_parser.add_argument("namespace")
-    arg_parser.add_argument("repo")
-    args = arg_parser.parse_args()
 
-    if args.command in requires_login:
-        if args.token is not None:
-            dhapi = DockerHubWebAPI(username="", password="", token=args.token)
+    def requires_login(argss):
+        token = None
+        tokenfile = None
+        try:
+            token = argss.token
+        except AttributeError:
+            pass
 
-        elif args.tokenfile is not None:
+        try:
+            tokenfile = argss.tokenfile
+        except AttributeError:
+            pass
+
+        if token is not None:
+            dhapi = DockerHubWebAPI(username="", password="", token=argss.token)
+
+        elif tokenfile is not None:
             # noinspection PyBroadException
-            dhapi = DockerHubWebAPI(username="", password="", token=args.tokenfile.readline().rstrip())
-            args.tokenfile.close()
+            dhapi = DockerHubWebAPI(username="", password="", token=argss.tokenfile.readline().rstrip())
+            argss.tokenfile.close()
         else:
-            username = args.username or input("Username: ")
-            password = args.password or getpass("Password: ")
+            username = argss.username or input("Username: ")
+            password = argss.password or getpass("Password: ")
 
             dhapi = DockerHubWebAPI(username, password)
-    else:
-        dhapi = DockerHubWebAPI("", "", "")
 
-    inp = ""
-    if args.command in requires_input:
-        if args.file is not None:
-            file = args.file
+        return dhapi
+
+    def requires_input(argss):
+        if argss.file is not None:
+            file = argss.file
             inp = "".join(file.readlines())
             file.close()
         else:
             inp = sys.stdin.read()
 
-    # currently there are only two supported commands
-    if args.command == "update-repo-full-description":
-        dhapi.set_repository_full_description(args.namespace, args.repo, inp)
-    elif args.command == "update-repo-description":
-        dhapi.set_repository_short_description(args.namespace, args.repo, inp)
+        return inp
+
+    def update_repo_full_description(argss):
+        dhwebapi = requires_login(argss)
+        content = requires_input(argss)
+        dhwebapi.set_repository_full_description(argss.namespace, argss.repository, content)
+
+    def update_repo_description(argss):
+        dhwebapi = requires_login(argss)
+        content = requires_input(argss)
+        dhwebapi.set_repository_short_description(argss.namespace, argss.repository, content)
+
+    def get_token(argss):
+        dhwebapi = requires_login(argss)
+        print(dhwebapi.token)
+
+    usage = '''
+    usage: dhwebapi command [opt_args] [mandatory_args]
+    
+    commands:
+        update-repo-full-description
+            optional args:
+                -u, --username USERNAME
+                -p, --password PASSWORD
+                    NOT RECOMMENDED 
+                -t, --token TOKEN
+                --tokenfile TOKENFILE
+                -f, --file FILE
+            
+            mandatory args:
+                NAMESPACE
+                REPOSITORY
+        
+        update-repo-description
+            optional args:
+                -u, --username USERNAME
+                -p, --password PASSWORD
+                    NOT RECOMMENDED 
+                -t, --token TOKEN
+                --tokenfile TOKENFILE
+                -f, --file FILE
+            
+            mandatory args:
+                NAMESPACE
+                REPOSITORY
+                
+        gettoken
+            optional args:
+                -u, --username USERNAME
+                -p, --password PASSWORD
+                    NOT RECOMMENDED 
+    '''
+
+    arg_parser = ArgumentParser(prog="dhwebapi", usage=usage)
+
+    subparsers = arg_parser.add_subparsers()
+    subcmds = dict()
+
+    subcmds["update-repo-full-description"] = subparsers.add_parser("update-repo-full-description")
+    subcmds["update-repo-description"] = subparsers.add_parser("update-repo-description")
+
+    subcmds["update-repo-full-description"].set_defaults(func=update_repo_full_description)
+    subcmds["update-repo-description"].set_defaults(func=update_repo_description)
+
+    for subcmd in subcmds.values():
+        subcmd.add_argument("namespace")
+        subcmd.add_argument("repository")
+        subcmd.add_argument("-u", "--username",
+                            help="Use this username for identification during communication with hub.docker.com",
+                            required=False)
+        subcmd.add_argument("-p", "--password",
+                            help="Use this password for identification during communication with hub.docker.com \n "
+                                 "THIS IS NOT RECOMMENDED BECAUSE PASSWORD MAY BE SHOWN IN COMMANDS LOG!",
+                            required=False)
+        subcmd.add_argument("-f", "--file",
+                            help="Use this file as an input for pushing operations",
+                            required=False, type=FileType())
+        subcmd.add_argument("-t", "--token",
+                            help="Use this token as identification during communication with hub.docker.com",
+                            required=False)
+        subcmd.add_argument("--tokenfile",
+                            help="Use token in this file for authentication during communication.",
+                            required=False, type=FileType())
+
+    subcmds["get-token"] = subparsers.add_parser("get-token")
+    subcmd = subcmds["get-token"]
+    subcmd.set_defaults(func=get_token)
+    subcmd.add_argument("-u", "--username",
+                        help="Use this username for identification during communication with hub.docker.com",
+                        required=False)
+    subcmd.add_argument("-p", "--password",
+                        help="Use this password for identification during communication with hub.docker.com \n "
+                             "THIS IS NOT RECOMMENDED BECAUSE PASSWORD MAY BE SHOWN IN COMMANDS LOG!",
+                        required=False)
+
+    # subcmd.add_argument("--tokenfile",
+    #                     help="Write obtained token to this file. REPLACES EXISTING CONTENT IN FILE IF ANY!",
+    #                     required=False, type=FileType(mode='w'))
+
+    args = arg_parser.parse_args()
+    try:
+        args.func(args)
+    except AttributeError:
+        arg_parser.print_help()
 
     return 0
 
