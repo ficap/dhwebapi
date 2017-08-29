@@ -180,7 +180,7 @@ def _main():
                 NAMESPACE
                 REPOSITORY
                 
-        gettoken
+        get-token
             optional args:
                 -u, --username USERNAME
                 -p, --password PASSWORD
