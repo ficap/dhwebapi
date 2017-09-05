@@ -13,8 +13,8 @@ API_VER = "v2"
 
 
 class DockerHubWebAPI:
-    def __init__(self, username, password, token=None):
-        # type: (str, str, str or None) -> DockerHubWebAPI
+    def __init__(self, username=None, password=None, token=None):
+        # type: (str or None, str or None, str or None) -> DockerHubWebAPI
         """
         Instance can be made by a combination of username and password or using a valid token.
         If you use just a token remember that a new one should be obtained only by
@@ -24,7 +24,7 @@ class DockerHubWebAPI:
         self.username = username
         self.password = password
 
-        if not self.token:
+        if not self.token and self.username is not None and self.password is not None:
             self.login()
 
     def _send_request(self, method, command, data=None):
@@ -45,6 +45,11 @@ class DockerHubWebAPI:
             raise DockerHubException(response.status_code, response.url, response.headers, response.content)
 
     def login(self, username=None, password=None):
+        """
+        It uses self.username and self.password by default
+        These two can be overwritten by username, password
+        It provides an option to swap the user without need of making a new instance
+        """
         if username is not None and password is not None:
             self.username = username
             self.password = password
@@ -112,11 +117,10 @@ def _main():
             pass
 
         if token is not None:
-            dhapi = DockerHubWebAPI(username="", password="", token=argss.token)
+            dhapi = DockerHubWebAPI(token=argss.token)
 
         elif tokenfile is not None:
-            # noinspection PyBroadException
-            dhapi = DockerHubWebAPI(username="", password="", token=argss.tokenfile.readline().rstrip())
+            dhapi = DockerHubWebAPI(token=argss.tokenfile.readline().rstrip())
             argss.tokenfile.close()
         else:
             username = argss.username or input("Username: ")
