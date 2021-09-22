@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Python library for easy communication with hub.docker.com
 
 It uses undocumented API which is primarily used by hub.docker.com frontend
@@ -244,7 +243,3 @@ def _main():
         arg_parser.print_help()
 
     return 0
-
-if __name__ == "__main__":
-    import sys
-    sys.exit(_main())

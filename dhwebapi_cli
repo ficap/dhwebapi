@@ -1,0 +1,7 @@
+#!/usr/bin/env python3
+
+from dhwebapi.dhwebapi import _main as run_dhwebapi
+import sys
+
+if __name__ == "__main__":
+    sys.exit(run_dhwebapi())

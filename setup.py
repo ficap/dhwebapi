@@ -11,7 +11,7 @@ setup(
     url="https://github.com/ficap/dhwebapi",
     license="MIT",
     entry_points={
-        'console_scripts': ["dhwebapi=dhwebapi.dhwebapi:_main"]
+        'console_scripts': ["dhwebapi_cli = dhwebapi.dhwebapi:_main"]
     },
     packages=["dhwebapi"],
     install_requires=["requests"]
